@@ -37,6 +37,7 @@ class GSVModel:
     T2S_FIRST_STAGE_DECODER: InferenceSession
     T2S_STAGE_DECODER: InferenceSession
     VITS: InferenceSession
+    language: str = 'japanese'
 
 
 def convert_bin_to_fp32(
@@ -49,7 +50,7 @@ def convert_bin_to_fp32(
 
 def download_model(filename: str, repo_id: str = 'High-Logic/Genie') -> Optional[str]:
     try:
-        # package_root = files(PACKAGE_NAME)
+       
         # model_dir = str(package_root / "Data")
         # os.makedirs(model_dir, exist_ok=True)
 
@@ -88,6 +89,7 @@ class ModelManager:
         self.character_to_model: dict[str, dict[str, InferenceSession]] = LRUCacheDict(
             capacity=int(capacity_str))
         self.character_model_paths: dict[str, str] = {}  # 创建一个持久化字典来存储角色模型路径
+        self.character_model_languages: dict[str, str] = {} # To store language of the model
         self.providers = ["CPUExecutionProvider"]
 
         self.cn_hubert: Optional[InferenceSession] = None
@@ -185,17 +187,22 @@ class ModelManager:
     def clean_cache(self) -> None:
         temp_weights: list[str] = [_GSVModelFile.T2S_DECODER_WEIGHT_FP32, _GSVModelFile.VITS_WEIGHT_FP32]
         deleted_any: bool = False
-        try:
-            for character, model_dir in self.character_model_paths.items():
-                for filename in temp_weights:
-                    filepath: str = os.path.join(model_dir, filename)
-                    if os.path.exists(filepath):
+        for character, model_dir in self.character_model_paths.items():
+            for filename in temp_weights:
+                filepath: str = os.path.join(model_dir, filename)
+                if os.path.exists(filepath):
+                    try:
                         os.remove(filepath)
                         deleted_any = True
-            if deleted_any:
-                logger.info("All temporary weight files have been successfully deleted.")
-        except Exception as e:
-            logger.error(f"Failed to delete temporary weight file: {e}")
+                    except PermissionError:
+                        logger.warning(
+                            f"Could not delete temporary file '{filepath}'. "
+                            f"It is likely still in use and will be removed on the next run."
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to delete temporary weight file: {e}")
+        if deleted_any:
+            logger.info("Temporary weight files have been successfully cleaned up.")
 
 
 model_manager: ModelManager = ModelManager()
