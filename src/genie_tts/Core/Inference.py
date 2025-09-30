@@ -20,9 +20,16 @@ class GENIE:
             first_stage_decoder: ort.InferenceSession,
             stage_decoder: ort.InferenceSession,
             vocoder: ort.InferenceSession,
+            language: str = "ja"
     ) -> Optional[np.ndarray]:
-        text_seq: np.ndarray = np.array([japanese_to_phones(text)], dtype=np.int64)
-        text_bert = np.zeros((text_seq.shape[1], BERT_FEATURE_DIM), dtype=np.float32)
+        # 多语言分支
+        if language == "zh":
+            from ..Chinese.ChineseG2P import chinese_to_phones
+            text_seq: np.ndarray = np.array([chinese_to_phones(text)], dtype=np.int64)
+            text_bert = prompt_audio.text_bert  # 已在 ReferenceAudio 缓存真实 BERT 特征
+        else:
+            text_seq: np.ndarray = np.array([japanese_to_phones(text)], dtype=np.int64)
+            text_bert = np.zeros((text_seq.shape[1], BERT_FEATURE_DIM), dtype=np.float32)
         semantic_tokens: np.ndarray = self.t2s_cpu(
             ref_seq=prompt_audio.phonemes_seq,
             ref_bert=prompt_audio.text_bert,

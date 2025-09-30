@@ -80,6 +80,8 @@ class TTSPlayer:
                     continue
 
                 tts_client.stop_event.clear()
+                # 语言选择机制，优先 context.language，否则默认日语
+                language = getattr(context, "language", "ja")
                 audio_chunk = tts_client.tts(
                     text=sentence,
                     prompt_audio=context.current_prompt_audio,
@@ -87,6 +89,7 @@ class TTSPlayer:
                     first_stage_decoder=gsv_model.T2S_FIRST_STAGE_DECODER,
                     stage_decoder=gsv_model.T2S_STAGE_DECODER,
                     vocoder=gsv_model.VITS,
+                    language=language
                 )
 
                 if audio_chunk is not None:

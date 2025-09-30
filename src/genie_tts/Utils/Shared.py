@@ -11,6 +11,7 @@ class Context:
     def __init__(self):
         self.current_speaker: str = ''
         self.current_prompt_audio: Optional['ReferenceAudio'] = None
+        self.language: str = 'ja'  # 默认日语，可切换为 zh
 
 
 context: Context = Context()
