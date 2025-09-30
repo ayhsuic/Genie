@@ -80,8 +80,8 @@ class TTSPlayer:
                     continue
 
                 tts_client.stop_event.clear()
-                # 语言选择机制，优先 context.language，否则默认日语
-                language = getattr(context, "language", "ja")
+                # 从参考音频对象获取语言设置
+                language = context.current_prompt_audio.language
                 audio_chunk = tts_client.tts(
                     text=sentence,
                     prompt_audio=context.current_prompt_audio,
